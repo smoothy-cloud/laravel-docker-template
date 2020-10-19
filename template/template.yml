@@ -1,0 +1,276 @@
+api: v1
+
+meta:
+  icon: laravel
+  name: Laravel
+  baseline: The PHP Framework for Web Artisans
+  description: >
+    The PHP Framework for Web Artisans
+  categories:
+    - php
+
+form:
+  - title: Code repository
+    questions:
+      - variable: laravel_application
+        label: Code repository
+        hint: >
+          The Git repository containing the source code of your application.
+        required: true
+        type: code_repository
+  - title: Versions
+    questions:
+      - variable: laravel_version
+        label: Laravel version
+        hint: >
+          The Laravel version that your application is written in.
+        required: true
+        type: select
+        options:
+          - label: "5.5"
+            value: "5.5"
+          - label: "^5.6, 6, 7, 8"
+            value: "5.6"
+      - variable: php_version
+        label: PHP version
+        hint: >
+          The PHP version that your application is written in.
+        required: true
+        type: select
+        options:
+          - label: "7.3"
+            value: "7.3"
+          - label: "7.4"
+            value: "7.4"
+  - title: Dependencies
+    questions:
+      - variable: private_composer_registries
+        label: Private composer registries
+        hint: >
+          If your Laravel application depends on packages, like Laravel Nova, that are hosted on a private Composer
+          registry, you can specify the registries here. Smoothy will then configure Composer to authenticate with the
+          private registries before downloading the packages.
+        type: structs
+        questions:
+          - variable: url
+            label: URL
+            hint: The URL of the private registry.
+            type: url
+            required: true
+          - variable: username
+            label: Username
+            hint: The username that will be used to authenticate with the private registry.
+            type: string
+            required: true
+          - variable: password
+            label: Password
+            hint: The password that will be used to authenticate with the private registry.
+            type: password
+            required: true
+      - variable: system_dependencies
+        label: System dependencies
+        hint: >
+          If your Laravel application requires some specific Linux packages or extensions to be installed, you can
+          specify them here. Smoothy will install the packages for you using the apt package manager.
+        type: list
+        options:
+          - label: "MySQL client: <code>default-mysql-client</code>"
+            value: "default-mysql-client"
+          - label: "PostgreSQL client: <code>postgresql-client</code>"
+            value: "postgresql-client"
+  - title: Dependencies
+    questions:
+      - variable: timezone
+        label: Timezone
+        hint: >
+          Specify the timezone that should be configured for your application.
+        required: true
+        type: timezone
+      - variable: environment
+        label: Environment
+        hint: >
+          If your application uses sensitive data like passwords, SSH keys, or credentials, you typically do
+          not want to store them in Git. Therefore, Smoothy allows you to define this data as environment
+          variables, which are securely passed to the application during run-time.
+        type: map
+        default:
+          APP_ENV: production
+          APP_DEBUG: false
+          APP_KEY:
+      - variable: opcache_enabled
+        label: OPcache
+        hint: >
+          PHP's OPcode caching system can drastically improve the speed of your PHP application.
+          Specify here whether or not you want to enable OPcache for your application.
+        type: boolean
+      - variable: maximum_file_upload_size
+        label: Maximum file upload size
+        hint: >
+          Specify the maximum allowed file upload size in megabytes (MB).
+        type: integer
+        default: 2
+  - title: Background processing
+    questions:
+      - variable: run_scheduler
+        label: Laravel scheduler
+        hint: >
+          If your Laravel application uses the scheduler to execute periodic tasks, enable this option. Smoothy will
+          configure your image to automatically run <code>php artisan schedule:run</code> every minute.
+        type: boolean
+      - variable: daemons
+        label: Daemons
+        hint: >
+          Daemons are processes that you start once and keep running until you explicitly tell them to. A few
+          Laravel specific commands that should be executed as daemons are <code>php artisan queue:work</code>
+          and <code>php artisan horizon</code>. If your Laravel application uses daemon processes, you
+          can specify them here.
+        type: list
+        options:
+          - label: "php artisan horizon"
+            value: "php artisan horizon"
+          - label: "php artisan queue:work"
+            value: "php artisan queue:work"
+  - title: Assets
+    questions:
+      - variable: build_assets
+        label: Compile assets
+        hint: >
+          Chances are your Laravel application contains JavaScript and CSS assets that need to be compiled before they
+          can be deployed. When this is the case, enable this option.
+        type: boolean
+      - variable: package_manager
+        label: Package manager
+        hint: >
+          The package manager that should be used to install the JavaScript dependencies of your application.
+        required: true
+        type: select
+        options:
+          - label: NPM
+            value: npm
+          - label: Yarn
+            value: yarn
+        default: npm
+        if: "{{ variable.build_assets }}"
+      - variable: build_assets_script
+        label: Compile assets script
+        hint: >
+          You can provide the necessary commands to compile the assets of your Laravel application. Upon every
+          image build, Smoothy will run these commands in a Node.js environment and copy the compiled assets
+          into the <code>/public</code> folder of your application.
+        required: true
+        type: code
+        default:
+          switch:
+            - case: "{{ variable.package_manager == 'npm' }}"
+              value: npm run production
+            - case: "{{ variable.package_manager == 'yarn' }}"
+              value: yarn run production
+        if: "{{ variable.build_assets }}"
+      - variable: deploy_script
+        label: Deploy script
+        hint: >
+          Whenever a new version of your image is deployed, this script will be run. This makes it the perfect
+          place to run database migrations or cache your routes and configuration.
+        type: code
+        default:
+          switch:
+            - case: "{{ variable.laravel_version == '5.5' }}"
+              value: |
+                php artisan config:cache
+                php artisan route:cache
+                php artisan migrate --force
+            - case: "{{ variable.laravel_version == '5.6' }}"
+              value: |
+                php artisan config:cache
+                php artisan route:cache
+                php artisan view:cache
+                php artisan migrate --force
+
+deployment:
+
+  - resource: image
+    name: laravel_application
+    code_repository: "{{ variable.laravel_application }}"
+    dockerfile: Dockerfile
+    arguments:
+      - key: PRIVATE_COMPOSER_REGISTRY_URL_{{ loop.key }}
+        value: "{{ loop.value.url }}"
+        loop: "{{ variable.private_composer_registries }}"
+      - key: PRIVATE_COMPOSER_REGISTRY_USERNAME_{{ loop.key }}
+        value: "{{ loop.value.username }}"
+        loop: "{{ variable.private_composer_registries }}"
+      - key: PRIVATE_COMPOSER_REGISTRY_PASSWORD_{{ loop.key }}
+        value: "{{ loop.value.password }}"
+        loop: "{{ variable.private_composer_registries }}"
+
+  - resource: volume
+    name: laravel_data
+
+  - resource: config_file
+    name: server_conf
+    source: server.conf
+
+  - resource: container
+    name: laravel
+    image: "{* image.laravel_application *}"
+    volume_mounts:
+      - volume: "{* volume.laravel_data *}"
+        mount_path: /var/www/html
+    environment:
+      - key: TIMEZONE
+        value: "{{ variable.timezone }}"
+      - key: MAX_FILE_UPLOAD
+        value: "{{ variable.maximum_file_upload_size }}"
+      - key: OPCACHE
+        value: "{{ variable.opcache_enabled }}"
+      - map: "{{ variable.environment }}"
+        if: "{{ variable.environment }}"
+    memory: 256
+    cpus: 250
+
+  - resource: container
+    name: "daemon_{{ loop.key }}"
+    image: "{* image.laravel_application *}"
+    command: "{{ loop.value }}"
+    volume_mounts:
+      - volume: "{* volume.laravel_data *}"
+        mount_path: /var/www/html
+    environment:
+      - key: TIMEZONE
+        value: "{{ variable.timezone }}"
+      - map: "{{ variable.environment }}"
+        if: "{{ variable.environment }}"
+    memory: 256
+    cpus: 250
+    loop: "{{ variable.daemons }}"
+
+  - resource: container
+    name: nginx
+    image: smoothy/nginx-1.18:1.0.0
+    config_file_mounts:
+      - config_file: "{* config_file.server_conf *}"
+        mount_path: /etc/nginx/conf.d/server.conf
+    volume_mounts:
+      - volume: "{* volume.laravel_data *}"
+        mount_path: /var/www/html
+    environment:
+      - key: MAX_FILE_UPLOAD
+        value: "{{ variable.maximum_file_upload_size }}"
+    memory: 256
+    cpus: 250
+
+  - resource: service
+    name: laravel_application
+    title: Laravel application
+    container: "{* container.nginx *}"
+    port: 80
+
+interface:
+  logs:
+    - title: NGINX error logs
+      container: "{* container.nginx *}"
+    - title: Laravel logs
+      container: "{* container.laravel *}"
+    - title: "Daemon logs: {{ loop.value }}"
+      container: "{* container.daemon_{{ loop.key }} *}"
+      loop: "{{ variable.daemons }}"
