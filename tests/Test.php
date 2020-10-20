@@ -54,5 +54,14 @@ EOF,
         $browser->visit('/');
         $this->assertTrue($browser->pathIs("/"));
         $this->assertTrue($browser->see("Laravel"));
+
+        $browser->visit('/phpinfo');
+        $this->assertTrue($browser->pathIs("/phpinfo"));
+        $this->assertTrue($browser->seeHtml(
+            '<tr><td class="e">post_max_size</td><td class="v">100M</td><td class="v">100M</td></tr>'
+        ));
+        $this->assertTrue($browser->seeHtml(
+            '<tr><td class="e">upload_max_filesize</td><td class="v">100M</td><td class="v">100M</td></tr>'
+        ));
     }
 }
