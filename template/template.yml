@@ -266,6 +266,9 @@ deployment:
     port: 80
 
 interface:
+  volumes:
+    - title: Application
+      volume: "{* volume.laravel_data *}"
   logs:
     - title: NGINX error logs
       container: "{* container.nginx *}"
