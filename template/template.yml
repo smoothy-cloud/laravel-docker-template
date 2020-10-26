@@ -211,7 +211,7 @@ deployment:
     image: "{* image.laravel_application *}"
     volume_mounts:
       - volume: "{* volume.laravel_data *}"
-        mount_path: /var/www/html
+        mount_path: /var/www/html/storage
     environment:
       - key: TIMEZONE
         value: "{{ variable.timezone }}"
