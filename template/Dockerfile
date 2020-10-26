@@ -29,7 +29,7 @@ FROM smoothy/php-7.4-fpm:1.0.0
 {% if variable.system_dependencies|length > 0 %}
 RUN apt-get -qq update \
  && apt-get -qq install \
-    {% for dependency in variable.system_dependencies %}
+    {% for dependency in variable.system_dependencies|list %}
         {{ dependency }} \
     {% endfor %}
     > /dev/null \
@@ -53,7 +53,7 @@ RUN chown -R www-data:www-data /var/www/html \
 
 WORKDIR /var/www/html
 
-{% for private_composer_registry in variable.private_composer_registries %}
+{% for private_composer_registry in variable.private_composer_registries|list %}
 ARG PRIVATE_COMPOSER_REGISTRY_URL_{{ loop.index0 }}
 ARG PRIVATE_COMPOSER_REGISTRY_USERNAME_{{ loop.index0 }}
 ARG PRIVATE_COMPOSER_REGISTRY_PASSWORD_{{ loop.index0 }}
