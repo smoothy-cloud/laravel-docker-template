@@ -55,7 +55,7 @@ form:
           - variable: url
             label: URL
             hint: The URL of the private registry.
-            type: url
+            type: string
             required: true
           - variable: username
             label: Username
