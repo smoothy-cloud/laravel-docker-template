@@ -206,10 +206,6 @@ deployment:
   - resource: volume
     name: laravel_data
 
-  - resource: config_file
-    name: server_conf
-    source: server.conf
-
   - resource: container
     name: laravel
     image: "{* image.laravel_application *}"
@@ -228,41 +224,10 @@ deployment:
     memory: 256
     cpus: 250
 
-  - resource: container
-    name: "daemon_{{ loop.key }}"
-    image: "{* image.laravel_application *}"
-    command: "{{ loop.value }}"
-    volume_mounts:
-      - volume: "{* volume.laravel_data *}"
-        mount_path: /var/www/html
-    environment:
-      - key: TIMEZONE
-        value: "{{ variable.timezone }}"
-      - map: "{{ variable.environment }}"
-        if: "{{ variable.environment }}"
-    memory: 256
-    cpus: 250
-    loop: "{{ variable.daemons }}"
-
-  - resource: container
-    name: nginx
-    image: smoothy/nginx-1.18:1.0.0
-    config_file_mounts:
-      - config_file: "{* config_file.server_conf *}"
-        mount_path: /etc/nginx/conf.d/server.conf
-    volume_mounts:
-      - volume: "{* volume.laravel_data *}"
-        mount_path: /var/www/html
-    environment:
-      - key: MAX_FILE_UPLOAD
-        value: "{{ variable.maximum_file_upload_size }}"
-    memory: 256
-    cpus: 250
-
   - resource: service
     name: laravel_application
     title: Laravel application
-    container: "{* container.nginx *}"
+    container: "{* container.laravel *}"
     port: 80
 
 interface:
@@ -270,10 +235,5 @@ interface:
     - title: Application
       volume: "{* volume.laravel_data *}"
   logs:
-    - title: NGINX error logs
-      container: "{* container.nginx *}"
     - title: Laravel logs
       container: "{* container.laravel *}"
-    - title: "Daemon logs: {{ loop.value }}"
-      container: "{* container.daemon_{{ loop.key }} *}"
-      loop: "{{ variable.daemons }}"

@@ -23,8 +23,11 @@ RUN {{ command }}
 #####################################
 
 {% if variable.php_version == "7.4" %}
-FROM smoothy/php-7.4-fpm:1.0.0
+FROM smoothy/php-7.4-nginx:0.0.2
 {% endif %}
+
+# configure base image
+ENV APPLICATION_ROOT /var/www/html/public
 
 {% if variable.system_dependencies|length > 0 %}
 RUN apt-get -qq update \
@@ -62,4 +65,9 @@ RUN composer config $PRIVATE_COMPOSER_REGISTRY_URL_{{ loop.index0 }} $PRIVATE_CO
 
 RUN composer install --quiet --ignore-platform-reqs --no-interaction --prefer-dist
 
+# copy daemons
+COPY daemons.conf /etc/supervisor/conf.d/daemons.conf
+
+# copy entrypoint
 COPY run.sh /entrypoints/run.sh
+RUN chmod +x /entrypoints/run.sh
