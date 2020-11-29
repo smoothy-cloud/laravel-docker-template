@@ -23,11 +23,8 @@ RUN {{ command }}
 #####################################
 
 {% if variable.php_version == "7.4" %}
-FROM smoothy/php-7.4-nginx:0.0.2
+FROM smoothy/php-7.4-fpm:1.0.0
 {% endif %}
-
-# configure base image
-ENV APPLICATION_ROOT /var/www/html/public
 
 {% if variable.system_dependencies|length > 0 %}
 RUN apt-get -qq update \
@@ -50,12 +47,6 @@ COPY code-repository/. /var/www/html
 COPY --from=asset-stage /app/public /var/www/html/public
 {% endif %}
 
-RUN chown -R www-data:www-data /var/www/html \
- && chmod -R 775 storage \
- && chmod -R 775 bootstrap/cache
-
-WORKDIR /var/www/html
-
 {% for private_composer_registry in variable.private_composer_registries|list %}
 ARG PRIVATE_COMPOSER_REGISTRY_URL_{{ loop.index0 }}
 ARG PRIVATE_COMPOSER_REGISTRY_USERNAME_{{ loop.index0 }}
@@ -65,9 +56,4 @@ RUN composer config $PRIVATE_COMPOSER_REGISTRY_URL_{{ loop.index0 }} $PRIVATE_CO
 
 RUN composer install --quiet --ignore-platform-reqs --no-interaction --prefer-dist
 
-# copy daemons
-COPY daemons.conf /etc/supervisor/conf.d/daemons.conf
-
-# copy entrypoint
 COPY run.sh /entrypoints/run.sh
-RUN chmod +x /entrypoints/run.sh
