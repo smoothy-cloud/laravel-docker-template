@@ -185,6 +185,8 @@ form:
                 php artisan route:cache
                 php artisan view:cache
                 php artisan migrate --force
+                rm public/storage
+                php artisan storage:link
 
 deployment:
 
@@ -263,7 +265,7 @@ deployment:
     name: laravel_application
     title: Laravel application
     container: "{* container.nginx *}"
-    port: 80
+    port: 8080
 
 interface:
   volumes:

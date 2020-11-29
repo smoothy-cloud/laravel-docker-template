@@ -47,6 +47,10 @@ COPY code-repository/. /var/www/html
 COPY --from=asset-stage /app/public /var/www/html/public
 {% endif %}
 
+RUN chown -R www-data:smoothy /var/www/html \
+ && chmod -R 775 storage \
+ && chmod -R 775 bootstrap/cache
+
 {% for private_composer_registry in variable.private_composer_registries|list %}
 ARG PRIVATE_COMPOSER_REGISTRY_URL_{{ loop.index0 }}
 ARG PRIVATE_COMPOSER_REGISTRY_USERNAME_{{ loop.index0 }}
