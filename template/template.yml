@@ -224,7 +224,7 @@ deployment:
     memory: 256
     cpus: 250
 
-  - resource: service
+  - resource: entrypoint
     name: laravel_application
     title: Laravel application
     container: "{* container.laravel *}"
